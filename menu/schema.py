@@ -2,6 +2,7 @@ import graphene
 from graphene_django import DjangoObjectType
 
 from .models import Menu
+from users.schema import UserType
 
 
 class MenuType(DjangoObjectType):
@@ -23,6 +24,7 @@ class CreateMenuItem(graphene.Mutation):
     ingredients = graphene.String()
     cooking_time = graphene.Int()
     description = graphene.String()
+    posted_by = graphene.Field(UserType)
 
     class Arguments:
         name = graphene.String()
@@ -32,12 +34,15 @@ class CreateMenuItem(graphene.Mutation):
         description = graphene.String()
 
     def mutate(self, info, name, image_url, ingredients, cooking_time, description):
+        user = info.context.user or None
+
         menu_item = Menu(
             name=name,
             image_url=image_url,
             ingredients=ingredients,
             cooking_time=cooking_time,
-            description=description
+            description=description,
+            posted_by=user,
         )
         menu_item.save()
 
@@ -48,7 +53,9 @@ class CreateMenuItem(graphene.Mutation):
             ingredients=menu_item.ingredients,
             cooking_time=menu_item.cooking_time,
             description=menu_item.description,
+            posted_by=menu_item.posted_by,
         )
+
 
 class Mutation(graphene.ObjectType):
     create_menu_item = CreateMenuItem.Field()
